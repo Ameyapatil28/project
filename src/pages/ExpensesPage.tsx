@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Expense, ExpenseCategory } from '../types';
-import { Plus, Trash2, AlertTriangle, ArrowUpDown, Filter, Frown } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, ArrowUpDown, Filter, Frown, Wallet, Calendar, TrendingUp } from 'lucide-react';
+import PieChart from '../components/PieChart';
+import BarChart from '../components/BarChart';
+import { calculateCategorySummary, calculateMonthlySpending } from '../utils/calculations';
 
 interface ExpensesPageProps {
   expenses: Expense[];
@@ -68,11 +71,78 @@ export default function ExpensesPage({ expenses, onAddExpense, onDeleteExpense }
     });
   }, [expenses, filterCategory, sortOrder]);
 
+  // Calculations for summary cards and charts
+  const categorySummary = useMemo(() => calculateCategorySummary(expenses), [expenses]);
+  const monthlySpending = useMemo(() => calculateMonthlySpending(expenses), [expenses]);
+
+  const totalExpenses = useMemo(() => expenses.reduce((sum, exp) => sum + exp.amount, 0), [expenses]);
+  
+  const thisMonthSpending = useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    return expenses
+      .filter((exp) => exp.date.getMonth() === currentMonth && exp.date.getFullYear() === currentYear)
+      .reduce((sum, exp) => sum + exp.amount, 0);
+  }, [expenses]);
+
+  const highestCategory = categorySummary[0]?.category || 'None';
+
   return (
     <div className="space-y-8 animate-fade-in relative">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Expenses</h1>
         <p className="text-gray-600 dark:text-gray-400">Manage all your manual entries and imported expenses.</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <Wallet className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Expenses</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            ₹{totalExpenses.toLocaleString()}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">This Month Spending</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            ₹{thisMonthSpending.toLocaleString()}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Highest Category</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            {highestCategory}
+          </p>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Category Distribution</h2>
+          <PieChart data={categorySummary} />
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Spending Trend</h2>
+          <BarChart data={monthlySpending} />
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
