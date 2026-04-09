@@ -43,8 +43,9 @@ export function calculateInsights(expenses: Expense[]): InsightData {
   const totalSpent = currentExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const categorySummary = calculateCategorySummary(currentExpenses);
   const topCategory = categorySummary[0]?.category || 'Food';
+  const topCategoryAmount = categorySummary[0]?.total || 0;
 
-  const budgetRemaining = totalBudget - totalSpent;
+  const budgetRemaining = Math.max(0, totalBudget - totalSpent);
   const budgetPercentage = (budgetRemaining / totalBudget) * 100;
 
   const lastMonth = new Date();
@@ -52,15 +53,24 @@ export function calculateInsights(expenses: Expense[]): InsightData {
   const lastMonthExpenses = expenses.filter((exp) => exp.date.getMonth() === lastMonth.getMonth());
   const lastMonthTotal = lastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-  const monthlyTrend = lastMonthTotal > 0 ? ((totalSpent - lastMonthTotal) / lastMonthTotal) * 100 : 0;
+  const monthlyTrend = lastMonthTotal > 0 ? ((totalSpent - lastMonthTotal) / lastMonthTotal) * 100 : totalSpent > 0 ? 100 : 0;
+
+  const topCategoryLastMonthExpenses = lastMonthExpenses.filter(exp => exp.category === topCategory);
+  const topCategoryLastMonthTotal = topCategoryLastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  
+  const topCategoryTrend = topCategoryLastMonthTotal > 0 
+    ? ((topCategoryAmount - topCategoryLastMonthTotal) / topCategoryLastMonthTotal) * 100 
+    : topCategoryAmount > 0 ? 100 : 0;
 
   const categoryComparison = categorySummary.length > 0
-    ? `You spent ${Math.abs(monthlyTrend).toFixed(0)}% ${monthlyTrend > 0 ? 'more' : 'less'} on ${topCategory} this month.`
+    ? `You spent ${Math.abs(topCategoryTrend).toFixed(0)}% ${topCategoryTrend > 0 ? 'more' : 'less'} on ${topCategory} this month.`
     : 'Not enough data for comparison.';
 
   return {
     totalSpent,
     topCategory,
+    topCategoryAmount,
+    topCategoryTrend,
     budgetRemaining,
     budgetPercentage,
     monthlyTrend,

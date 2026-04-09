@@ -1,4 +1,4 @@
-import { Lightbulb, Target, TrendingUp, PiggyBank, AlertCircle } from 'lucide-react';
+import { Lightbulb, Target, TrendingUp, PiggyBank, AlertCircle, TrendingDown, AlertTriangle } from 'lucide-react';
 import { Expense } from '../types';
 import { calculateCategorySummary, calculateInsights } from '../utils/calculations';
 
@@ -51,6 +51,51 @@ export default function InsightsPage({ expenses }: InsightsPageProps) {
         <p className="text-gray-600 dark:text-gray-400">
           Smart analysis and personalized recommendations for better financial health
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2 mt-6">
+        {/* Highest Spending Category */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Highest Spending Category</h3>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{insights.topCategory}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            ₹{insights.topCategoryAmount?.toLocaleString() || 0} spent this month
+          </p>
+        </div>
+
+        {/* Highest Category Comparison */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{insights.topCategory} Trend</h3>
+          <div className="flex items-center gap-2">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {Math.abs(insights.topCategoryTrend).toFixed(1)}%
+            </p>
+            {insights.topCategoryTrend > 0 ? (
+              <TrendingUp className="w-5 h-5 text-red-500" />
+            ) : (
+              <TrendingDown className="w-5 h-5 text-green-500" />
+            )}
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            {insights.topCategoryTrend > 0 ? 'more' : 'less'} than last month
+          </p>
+        </div>
+
+        {/* Overspending Detection */}
+        <div className={`rounded-2xl shadow-lg p-6 border ${insights.monthlyTrend > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'}`}>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className={`text-sm font-medium ${insights.monthlyTrend > 0 ? 'text-red-800 dark:text-red-300' : 'text-green-800 dark:text-green-300'}`}>
+              Overspending Detection
+            </h3>
+            {insights.monthlyTrend > 0 && <AlertTriangle className="w-4 h-4 text-red-500" />}
+          </div>
+          <p className={`text-lg font-bold mt-1 leading-tight ${insights.monthlyTrend > 0 ? 'text-red-900 dark:text-red-200' : 'text-green-900 dark:text-green-200'}`}>
+            You spent {Math.abs(insights.monthlyTrend).toFixed(1)}% {insights.monthlyTrend > 0 ? 'more' : 'less'} this month
+          </p>
+          <p className={`text-sm mt-2 font-medium ${insights.monthlyTrend > 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+            {insights.topCategory} expenses are highest.
+          </p>
+        </div>
       </div>
 
       <div className="bg-gradient-to-r from-blue-500 to-teal-500 rounded-2xl p-8 text-white">

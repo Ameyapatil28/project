@@ -33,6 +33,8 @@ export interface MonthlySpending {
 export interface InsightData {
   totalSpent: number;
   topCategory: ExpenseCategory;
+  topCategoryAmount: number;
+  topCategoryTrend: number;
   budgetRemaining: number;
   budgetPercentage: number;
   monthlyTrend: number;
