@@ -1,14 +1,26 @@
+import { useState } from 'react';
 import { Lightbulb, Target, TrendingUp, PiggyBank, AlertCircle, TrendingDown, AlertTriangle } from 'lucide-react';
 import { Expense } from '../types';
-import { calculateCategorySummary, calculateInsights } from '../utils/calculations';
+import { calculateCategorySummary, calculateInsights, calculateMonthlySpending } from '../utils/calculations';
 
 interface InsightsPageProps {
   expenses: Expense[];
 }
 
 export default function InsightsPage({ expenses }: InsightsPageProps) {
+  const [compareMonth, setCompareMonth] = useState<string>('default');
+
+  const availableMonths = calculateMonthlySpending(expenses).map((s) => s.month);
+
+  let compareMonthIndex, compareYear;
+  if (compareMonth !== 'default') {
+    const d = new Date(compareMonth);
+    compareMonthIndex = d.getMonth();
+    compareYear = d.getFullYear();
+  }
+
   const categorySummary = calculateCategorySummary(expenses);
-  const insights = calculateInsights(expenses);
+  const insights = calculateInsights(expenses, compareMonthIndex, compareYear);
 
   const recommendations = [
     {
@@ -35,8 +47,8 @@ export default function InsightsPage({ expenses }: InsightsPageProps) {
     `You spent ${insights.categoryComparison.toLowerCase()}`,
     `Your top spending category is ${insights.topCategory} with ${categorySummary[0]?.percentage.toFixed(0)}% of total expenses.`,
     insights.monthlyTrend > 0
-      ? `Your spending increased by ${insights.monthlyTrend.toFixed(1)}% compared to last month. Consider reviewing your budget.`
-      : `Great job! Your spending decreased by ${Math.abs(insights.monthlyTrend).toFixed(1)}% compared to last month.`,
+      ? `Your spending increased by ${insights.monthlyTrend.toFixed(1)}% compared to ${insights.comparisonLabel.toLowerCase()}. Consider reviewing your budget.`
+      : `Great job! Your spending decreased by ${Math.abs(insights.monthlyTrend).toFixed(1)}% compared to ${insights.comparisonLabel.toLowerCase()}.`,
     insights.budgetPercentage < 20
       ? 'Warning: You have less than 20% of your budget remaining this month.'
       : 'Your budget is on track. Keep up the good work!',
@@ -44,13 +56,32 @@ export default function InsightsPage({ expenses }: InsightsPageProps) {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          AI Insights
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Smart analysis and personalized recommendations for better financial health
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            AI Insights
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Smart analysis and personalized recommendations for better financial health
+          </p>
+        </div>
+        <div className="w-full sm:w-auto min-w-[200px]">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Compare Against
+          </label>
+          <select
+            value={compareMonth}
+            onChange={(e) => setCompareMonth(e.target.value)}
+            className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm py-2 px-3 border"
+          >
+            <option value="default">Default (Last Month)</option>
+            {availableMonths.map((month) => (
+              <option key={month} value={month}>
+                {month}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2 mt-6">
@@ -77,7 +108,7 @@ export default function InsightsPage({ expenses }: InsightsPageProps) {
             )}
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            {insights.topCategoryTrend > 0 ? 'more' : 'less'} than last month
+            {insights.topCategoryTrend > 0 ? 'more' : 'less'} than {insights.comparisonLabel.toLowerCase()}
           </p>
         </div>
 

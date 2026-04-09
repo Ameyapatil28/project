@@ -39,4 +39,5 @@ export interface InsightData {
   budgetPercentage: number;
   monthlyTrend: number;
   categoryComparison: string;
+  comparisonLabel: string;
 }

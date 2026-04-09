@@ -1,9 +1,11 @@
 import { X, Send } from 'lucide-react';
 import { useState } from 'react';
+import { Expense } from '../types';
 
 interface ChatBotProps {
   isOpen: boolean;
   onClose: () => void;
+  expenses: Expense[];
 }
 
 interface Message {
@@ -13,7 +15,7 @@ interface Message {
   timestamp: Date;
 }
 
-export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
+export default function ChatBot({ isOpen, onClose, expenses }: ChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -35,6 +37,7 @@ export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    setInput('');
 
     setTimeout(() => {
       const aiResponse: Message = {
@@ -45,25 +48,56 @@ export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
       };
       setMessages((prev) => [...prev, aiResponse]);
     }, 1000);
-
-    setInput('');
   };
 
   const getAIResponse = (question: string): string => {
     const q = question.toLowerCase();
-    if (q.includes('food') || q.includes('eat')) {
-      return "Based on your transactions, you've spent ₹4,250 on food this month. That's 23% of your total expenses. Consider meal prepping to save more!";
+    
+    // Evaluate Data Dynamically
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const currentExpenses = expenses.filter(exp => exp.date.getMonth() === currentMonth && exp.date.getFullYear() === currentYear);
+    const totalSpent = currentExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    if (q.includes('food') || q.includes('eat') || q.includes('dining')) {
+      const foodSpent = currentExpenses.filter(e => e.category === 'Food').reduce((sum, exp) => sum + exp.amount, 0);
+      const percent = totalSpent > 0 ? ((foodSpent / totalSpent) * 100).toFixed(0) : 0;
+      return `Based on your transactions, you've spent ₹${foodSpent.toLocaleString()} on food this month. That's ${percent}% of your total expenses. ${foodSpent > 5000 ? "Consider meal prepping to save more!" : "You're doing great keeping food costs down!"}`;
     }
     if (q.includes('travel') || q.includes('transport')) {
-      return "Your travel expenses are ₹2,100 this month. You're using UPI for most transport payments. Have you considered a monthly pass?";
+      const travelSpent = currentExpenses.filter(e => e.category === 'Travel').reduce((sum, exp) => sum + exp.amount, 0);
+      return `Your travel expenses are ₹${travelSpent.toLocaleString()} this month. Have you considered a monthly pass to optimize your commute?`;
     }
-    if (q.includes('save') || q.includes('saving')) {
-      return "Great question! Based on your spending patterns, you could save ₹3,000/month by reducing dining out by 30% and using public transport more.";
+    if (q.includes('summary') || q.includes('total') || q.includes('how much did i spend')) {
+      return `You have spent a total of ₹${totalSpent.toLocaleString()} this month.`;
+    }
+    if (q.includes('save') || q.includes('saving') || q.includes('savings')) {
+      const savePotential = (totalSpent * 0.15).toFixed(0);
+      return `Great question! Based on your recent spending patterns, you could potentially save around ₹${Number(savePotential).toLocaleString()} more per month by reducing non-essential expenses by just 15%.`;
     }
     if (q.includes('budget')) {
-      return "I recommend setting a monthly budget of ₹20,000 based on your average spending. Allocate: Food 30%, Bills 25%, Shopping 20%, Travel 15%, Others 10%.";
+      return `Based on your current spending of ₹${totalSpent.toLocaleString()}, I recommend keeping an eye on your top categories. Try the 50/30/20 rule: 50% Needs, 30% Wants, 20% Savings!`;
     }
-    return "I can help you analyze your spending patterns, track expenses by category, and provide budget recommendations. Try asking about specific categories or savings tips!";
+    if (q.includes('highest') || q.includes('top') || q.includes('most')) {
+      if (currentExpenses.length === 0) return "You don't have any expenses recorded for this month yet.";
+      
+      const categoryTotals = currentExpenses.reduce((acc, exp) => {
+        acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      let topCategory = '';
+      let topAmount = 0;
+      for (const [cat, amt] of Object.entries(categoryTotals)) {
+        if (amt > topAmount) {
+          topAmount = amt;
+          topCategory = cat;
+        }
+      }
+      return `Your highest spending category this month is ${topCategory} with ₹${topAmount.toLocaleString()} spent.`;
+    }
+    
+    return "I can help you analyze your real-time spending patterns, track expenses by category, find your top expenditures, and provide budget recommendations. Try asking 'What is my total this month?' or 'How much did I spend on food?'";
   };
 
   if (!isOpen) return null;

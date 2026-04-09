@@ -74,7 +74,7 @@ function App() {
             {renderPage()}
           </div>
         </main>
-        <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} expenses={expenses} />
       </div>
     </ThemeProvider>
   );

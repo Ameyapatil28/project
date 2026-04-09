@@ -35,7 +35,7 @@ export function calculateMonthlySpending(expenses: Expense[]): MonthlySpending[]
     .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 }
 
-export function calculateInsights(expenses: Expense[]): InsightData {
+export function calculateInsights(expenses: Expense[], compareMonthIndex?: number, compareYear?: number): InsightData {
   const totalBudget = 25000;
   const currentMonth = new Date().getMonth();
   const currentExpenses = expenses.filter((exp) => exp.date.getMonth() === currentMonth);
@@ -48,9 +48,16 @@ export function calculateInsights(expenses: Expense[]): InsightData {
   const budgetRemaining = Math.max(0, totalBudget - totalSpent);
   const budgetPercentage = (budgetRemaining / totalBudget) * 100;
 
-  const lastMonth = new Date();
-  lastMonth.setMonth(lastMonth.getMonth() - 1);
-  const lastMonthExpenses = expenses.filter((exp) => exp.date.getMonth() === lastMonth.getMonth());
+  let lastMonthExpenses: Expense[];
+
+  if (compareMonthIndex !== undefined && compareYear !== undefined) {
+    lastMonthExpenses = expenses.filter((exp) => exp.date.getMonth() === compareMonthIndex && exp.date.getFullYear() === compareYear);
+  } else {
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    lastMonthExpenses = expenses.filter((exp) => exp.date.getMonth() === lastMonth.getMonth() && exp.date.getFullYear() === lastMonth.getFullYear());
+  }
+
   const lastMonthTotal = lastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
   const monthlyTrend = lastMonthTotal > 0 ? ((totalSpent - lastMonthTotal) / lastMonthTotal) * 100 : totalSpent > 0 ? 100 : 0;
@@ -66,6 +73,12 @@ export function calculateInsights(expenses: Expense[]): InsightData {
     ? `You spent ${Math.abs(topCategoryTrend).toFixed(0)}% ${topCategoryTrend > 0 ? 'more' : 'less'} on ${topCategory} this month.`
     : 'Not enough data for comparison.';
 
+  let comparisonLabel = 'last month';
+  if (compareMonthIndex !== undefined && compareYear !== undefined) {
+    const d = new Date(compareYear, compareMonthIndex);
+    comparisonLabel = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+
   return {
     totalSpent,
     topCategory,
@@ -75,5 +88,6 @@ export function calculateInsights(expenses: Expense[]): InsightData {
     budgetPercentage,
     monthlyTrend,
     categoryComparison,
+    comparisonLabel // we should update InsightData to include comparisonLabel
   };
 }
